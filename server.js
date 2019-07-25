@@ -18,6 +18,15 @@ app.use(cors({origin: '*'})); //For FCC testing purposes only
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+//Helmet
+const helmet = require('helmet');
+app.use(helmet.hidePoweredBy());
+app.use(helmet.frameguard({action: 'SAMEORIGIN'}));
+app.use(helmet.xssFilter());
+app.use(helmet.noSniff());
+app.use(helmet.ieNoOpen());
+app.use(helmet.dnsPrefetchControl());
+
 //Sample front-end
 app.route('/b/:board/')
   .get(function (req, res) {

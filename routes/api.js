@@ -10,9 +10,84 @@
 
 var expect = require('chai').expect;
 
+const MongoClient = require('mongodb').MongoClient;
+const Mongoose = require('mongoose');
+
+const CONNECTION_STRING = process.env.DB;
+
+let threadSchema = new Mongoose.Schema({
+  board: { type: String, required: true },
+  threadText: { type: String, required: true },
+  delete_password: { type: String, required: true },
+  reported: { type: Boolean }
+});
+let threadrecord = Mongoose.model('threadRecords', threadSchema);
+
+let replySchema = new Mongoose.Schema({
+  board: { type: String, required: true },
+  thread: { type: String, required: true },
+  threadText: { type: String, required: true },
+  delete_password: { type: String, required: true },
+  reported: { type: Boolean }
+});
+let replyRecord = Mongoose.model('replyRecords', replySchema);
+
 module.exports = function (app) {
+  Mongoose.connect(CONNECTION_STRING, { useNewUrlParser: true, useFindAndModify: false }, function (err) {
+    if (err) {
+      console.log(err);
+    } else {
+      console.log('DB Connected');
+    }
+  });
   
-  app.route('/api/threads/:board');
+  app.route('/api/threads/:board')
+  .post(function (req, res) {
+    /*console.log(req.body);
+    console.log(req.params);*/
+    threadrecord.create({
+      'board': req.params.board,
+      'threadText': req.body.text,
+      'delete_password': req.body.delete_password,
+      'reported': false
+    },function (err) {
+      if (err) {
+        console.log(err);
+        res.send(err);
+      } else {
+        res.redirect('/b/' + req.params.board + '/');
+      }
+    });
+    //res.send('hi');
+  })
+  .get(function (req, res) {
+    let resArray = [];
+    threadrecord.find({'board': req.params.board}).sort({'created_on': -1}).limit(10).exec(function (err, docs) {
+      if (err) {
+        console.log(err);
+      } else {
+        docs.forEach(ele => {
+          var e = {'board': ele.board, 'text': ele.threadText, '_id': ele._id, 'created_on': ele.created_on, 'replycount': 0, replies: []};
+          //get the three most recent replies
+          replyRecord.find({'board': req.params.board, 'thread': ele._id}).sort({'created_on': -1}).exec(function (err2, reps) {
+            if (err2) {
+              console.log(err2);
+            } else {
+              reps.forEach(r => {
+                if (e.replycount < 3) {
+                  var r = {'board': r.board, '_id': r._id, 'created_on': r.created_on, 'text': r.threadText};
+                  e.replies.push(r);
+                }
+                e.replycount++;
+              });
+            }
+          });
+          resArray.push(e);
+        });
+        res.send(resArray);
+      }
+    });
+  });
     
   app.route('/api/replies/:board');
 

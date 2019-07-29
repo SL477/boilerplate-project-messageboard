@@ -67,7 +67,7 @@ module.exports = function (app) {
         console.log(err);
       } else {
         docs.forEach(ele => {
-          var e = {'board': ele.board, 'text': ele.threadText, '_id': ele._id, 'created_on': ele.created_on, 'replycount': 0, replies: []};
+          var e = {'board': ele.board, 'text': ele.threadText, '_id': ele._id, 'created_on': ele.created_on, 'bumped_on': ele.created_on, 'replycount': 0, 'replies': []};
           //get the three most recent replies
           replyRecord.find({'board': req.params.board, 'thread': ele._id}).sort({'created_on': -1}).exec(function (err2, reps) {
             if (err2) {
@@ -89,6 +89,83 @@ module.exports = function (app) {
     });
   });
     
-  app.route('/api/replies/:board');
+  app.route('/api/replies/:board')
+  .post(function (req, res) {
+    console.log(req.body.thread_id);
+    replyRecord.create({
+      'board': req.params.board,
+      'thread': req.body.thread_id,
+      'threadText': req.body.text,
+      'delete_password':  req.body.delete_password,
+      'reported': false
+    }, function (err) {
+      if (err) {
+        console.log(err);
+        res.send(err);
+      } else {
+        res.redirect('/b/' + req.params.board + '/' + req.body.thread_id);
+      }
+    })
+  })
+  .get(function (req, res) {
+    /*console.log(req.params);
+    console.log(req.params.thread_id);
+    console.log(req.body);*/
+
+    let resArray = [];
+    var finder = {'board': req.params.board};
+    if (req.params.thread_id != null) {
+      finder['_id'] = req.params.thread_id;
+    }
+    threadrecord.find(finder).exec(function (err, docs) {
+      if (err) {
+        console.log(err);
+      } else {
+        var dcnt = 0;
+        docs.forEach(ele => {
+          dcnt++;
+          //console.log(ele);
+          var e = {'board': ele.board, 'text': ele.threadText, '_id': ele._id, 'created_on': ele.created_on, 'bumped_on': ele.created_on, 'replycount': 0, replies: []};
+          //get the three most recent replies
+          replyRecord.find({'board': ele.board, 'thread': ele._id}).sort({'created_on': -1}).exec(function (err2, reps) {
+            if (err2) {
+              console.log(err2);
+            } else {
+              //console.log(reps.length);
+              var rcnt = 0;
+              if (reps != null) {
+                reps.forEach(r => {
+                //console.log('reps ' + r)
+                var r = {'board': r.board, '_id': r._id, 'created_on': r.created_on, 'text': r.threadText};
+               // console.log(e);
+                e.replies.push(r);
+                e.replycount++;
+                rcnt++;
+                if (rcnt == reps.length && dcnt == docs.length) {
+                  resArray.push(e);
+                  console.log(resArray);
+                  res.send(resArray[0]);
+                } else {
+                  
+                 // console.log('rcnt: ' + rcnt + ' dcnt: ' + dcnt);
+                }
+              });
+            } else {
+                if (dcnt == docs.length) {
+                  resArray.push(e);
+                  //console.log(resArray);
+                  res.send(resArray[0])
+                }
+              }
+            }
+          });
+          resArray.push(e);
+          //dcnt++;
+        });
+        /*console.log(resArray);
+        res.send(resArray);*/
+      }
+    });
+  });
 
 };

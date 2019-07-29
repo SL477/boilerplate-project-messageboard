@@ -87,6 +87,20 @@ module.exports = function (app) {
         res.send(resArray);
       }
     });
+  })
+  .delete(function (req, res) {
+    console.log(req.body);
+    threadrecord.findOneAndDelete({'_id': req.body.thread_id, 'delete_password': req.body.delete_password}, function(err, doc) {
+      if (err) {
+        console.log(err);
+        //res.send('incorrect password');
+      }
+      if (doc != null) {
+        res.send('success');
+      } else {
+        res.send('incorrect password');
+      }
+    });
   });
     
   app.route('/api/replies/:board')

@@ -14,7 +14,7 @@ var server = require('../server');
 chai.use(chaiHttp);
 
 suite('Functional Tests', function() {
-
+  var delThreadID;
   suite('API ROUTING FOR /api/threads/:board', function() {
     
     suite('POST', function() {
@@ -33,7 +33,7 @@ suite('Functional Tests', function() {
         });
       });
     });
-    var delThreadID;
+    
     suite('GET', function() {
       test('GET Test', function (done) {
         chai.request(server)
@@ -129,19 +129,82 @@ suite('Functional Tests', function() {
   suite('API ROUTING FOR /api/replies/:board', function() {
     
     suite('POST', function() {
-      
+      test('POST a reply', function (done) {
+        chai.request(server)
+        .post('/api/replies/test3')
+        .send({
+          text: 'test reply',
+          delete_password: 'test delete',
+          thread_id: delThreadID
+        })
+        .end(function (err, res) {
+          assert.equal(res.status, 200);
+          done();
+        });
+      });
     });
-    
+    var replyid;
     suite('GET', function() {
-      
+      test('GET the replies', function (done) {
+        chai.request(server)
+        .get('/api/replies/test3')
+        .query({thread_id: delThreadID})
+        .end(function (err, res) {
+          //{'board': ele.board, 'text': ele.threadText, '_id': ele._id, 'created_on': ele._id.getTimestamp(), 'bumped_on': ele._id.getTimestamp(), 'replycount': 0, replies: []};
+          //{'board': r.board, '_id': r._id, 'created_on': r._id.getTimestamp(), 'text': r.threadText};
+          assert.equal(res.status, 200);
+          assert.isObject(res.body);
+          replyid = res.body.replies[0]._id;
+          done();
+        });
+      });
     });
     
     suite('PUT', function() {
-      
+      test('PUT a reply', function (done) {
+        chai.request(server)
+        .put('/api/replies/test3')
+        .send({
+          thread_id: delThreadID,
+          reply_id: replyid
+        })
+        .end(function (err, res) {
+          assert.equal(res.status, 200);
+          assert.equal(res.text, 'success');
+          done();
+        });
+      });
     });
     
     suite('DELETE', function() {
-      
+      test('DELETE a reply incorrect password', function (done) {
+        chai.request(server)
+        .delete('/api/replies/test3')
+        .send({
+          thread_id: delThreadID,
+          reply_id: replyid,
+          delete_password: 'wrong password'
+        })
+        .end(function (err, res) {
+          assert.equal(res.status, 200);
+          assert.equal(res.text, 'incorrect password');
+          done();
+        });
+      });
+      test('DELETE a reply correct password', function (done) {
+        chai.request(server)
+        .delete('/api/replies/test3')
+        .send({
+          thread_id: delThreadID,
+          reply_id: replyid,
+          delete_password: 'test delete'
+        })
+        .end(function (err, res) {
+          assert.equal(res.status, 200);
+          assert.equal(res.text, 'success');
+          done();
+        });
+      });
     });
     
   });

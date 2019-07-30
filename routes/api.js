@@ -180,6 +180,26 @@ module.exports = function (app) {
         res.send(resArray);*/
       }
     });
+  })
+  .delete(function (req, res) {
+    replyRecord.findOneAndUpdate({
+      //conditions
+      '_id': req.body.reply_id,
+      'delete_password': req.body.delete_password,
+      'thread': req.body.thread_id
+    },{
+      //update
+      'threadText': '[deleted]'
+    },function (err, doc) {
+      if (err != null || doc == null) {
+        if (err) {
+          console.log(err);
+        }
+        res.send('incorrect password');
+      } else {
+        res.send('success');
+      }
+    });
   });
 
 };

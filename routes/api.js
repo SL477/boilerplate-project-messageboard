@@ -67,7 +67,8 @@ module.exports = function (app) {
         console.log(err);
       } else {
         docs.forEach(ele => {
-          var e = {'board': ele.board, 'text': ele.threadText, '_id': ele._id, 'created_on': ele.created_on, 'bumped_on': ele.created_on, 'replycount': 0, 'replies': []};
+          //console.log(ele._id.getTimestamp());
+          var e = {'board': ele.board, 'text': ele.threadText, '_id': ele._id, 'created_on': ele._id.getTimestamp(), 'bumped_on': ele._id.getTimestamp(), 'replycount': 0, 'replies': []};
           //get the three most recent replies
           replyRecord.find({'board': req.params.board, 'thread': ele._id}).sort({'created_on': -1}).exec(function (err2, reps) {
             if (err2) {
@@ -75,7 +76,7 @@ module.exports = function (app) {
             } else {
               reps.forEach(r => {
                 if (e.replycount < 3) {
-                  var r = {'board': r.board, '_id': r._id, 'created_on': r.created_on, 'text': r.threadText};
+                  var r = {'board': r.board, '_id': r._id, 'created_on': r._id.getTimestamp(), 'text': r.threadText};
                   e.replies.push(r);
                 }
                 e.replycount++;
@@ -100,6 +101,20 @@ module.exports = function (app) {
       } else {
         res.send('incorrect password');
       }
+    });
+  })
+  .put(function (req, res) {
+    threadrecord.findOneAndUpdate({
+      //Conditions
+      '_id': req.body.thread_id
+    },{
+      //update
+      'reported': true
+    }, function (err, doc) {
+      if (err) {
+        console.log(err);
+      }
+      res.send('success');
     });
   });
     
@@ -139,7 +154,7 @@ module.exports = function (app) {
         docs.forEach(ele => {
           dcnt++;
           //console.log(ele);
-          var e = {'board': ele.board, 'text': ele.threadText, '_id': ele._id, 'created_on': ele.created_on, 'bumped_on': ele.created_on, 'replycount': 0, replies: []};
+          var e = {'board': ele.board, 'text': ele.threadText, '_id': ele._id, 'created_on': ele._id.getTimestamp(), 'bumped_on': ele._id.getTimestamp(), 'replycount': 0, replies: []};
           //get the three most recent replies
           replyRecord.find({'board': ele.board, 'thread': ele._id}).sort({'created_on': -1}).exec(function (err2, reps) {
             if (err2) {
@@ -150,7 +165,7 @@ module.exports = function (app) {
               if (reps != null) {
                 reps.forEach(r => {
                 //console.log('reps ' + r)
-                var r = {'board': r.board, '_id': r._id, 'created_on': r.created_on, 'text': r.threadText};
+                var r = {'board': r.board, '_id': r._id, 'created_on': r._id.getTimestamp(), 'text': r.threadText};
                // console.log(e);
                 e.replies.push(r);
                 e.replycount++;
@@ -199,6 +214,21 @@ module.exports = function (app) {
       } else {
         res.send('success');
       }
+    });
+  })
+  .put(function (req, res) {
+    replyRecord.findOneAndUpdate({
+      //Conditions
+      'thread': req.body.thread_id,
+      '_id': req.body.thread_id
+    },{
+      //update
+      'reported': true
+    }, function (err, doc) {
+      if (err) {
+        console.log(err);
+      }
+      res.send('success');
     });
   });
 

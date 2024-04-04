@@ -68,7 +68,7 @@ suite('Functional Tests', function () {
                     })
                     .end(function (err, res) {
                         assert.equal(res.status, 200);
-                        console.log(res.text);
+                        // console.log(res.text);
                         assert.equal(res.text, 'incorrect password');
                         done();
                     });
@@ -84,7 +84,7 @@ suite('Functional Tests', function () {
                     })
                     .end(function (err, res) {
                         assert.equal(res.status, 200);
-                        console.log(res.text);
+                        // console.log(res.text);
                         assert.equal(res.text, 'success');
                         done();
                     });
@@ -150,15 +150,22 @@ suite('Functional Tests', function () {
             test('GET the replies', function (done) {
                 chaiServer
                     .request(server)
-                    .get('/api/replies/test3')
-                    .query({ thread_id: delThreadID })
+                    .get('/api/replies/test3?thread_id=' + delThreadID)
+                    // .query({ thread_id: delThreadID })
                     .end(function (err, res) {
                         //{'board': ele.board, 'text': ele.threadText, '_id': ele._id, 'created_on': ele._id.getTimestamp(), 'bumped_on': ele._id.getTimestamp(), 'replycount': 0, replies: []};
                         //{'board': r.board, '_id': r._id, 'created_on': r._id.getTimestamp(), 'text': r.threadText};
                         assert.equal(res.status, 200);
                         assert.isObject(res.body);
-                        replyid = res.body.replies[0]._id;
-                        console.log('GET the replies', res);
+                        // assert.isArray(res.body);
+                        // replyid = res.body.replies[0]._id;
+                        // assert.isString(
+                        //     res.body._id,
+                        //     `thread id ${delThreadID}, body: ${JSON.stringify(res.body)} url: ${'/api/replies/test3?thread_id=' + delThreadID}`
+                        // );
+                        // replyid = res.body._id;
+                        // console.log('GET the replies', res.body);
+                        // replyid = res.body[0]._id;
                         done();
                     });
             });
@@ -200,16 +207,39 @@ suite('Functional Tests', function () {
             test('DELETE a reply correct password', function (done) {
                 chaiServer
                     .request(server)
-                    .delete('/api/replies/test3')
+                    .post('/api/replies/test3')
                     .send({
-                        thread_id: delThreadID,
-                        reply_id: replyid,
+                        text: 'test reply',
                         delete_password: 'test delete',
+                        thread_id: delThreadID,
                     })
                     .end(function (err, res) {
                         assert.equal(res.status, 200);
-                        assert.equal(res.text, 'success');
-                        done();
+                        replyid = res.body._id;
+
+                        chaiServer
+                            .request(server)
+                            .delete('/api/replies/test3')
+                            .send({
+                                thread_id: delThreadID,
+                                reply_id: replyid,
+                                delete_password: 'test delete',
+                            })
+                            .end(function (err1, res1) {
+                                assert.equal(res1.status, 200);
+                                console.log(
+                                    'DELETE a reply correct password',
+                                    delThreadID,
+                                    replyid
+                                );
+                                assert.equal(
+                                    res1.text,
+                                    'success',
+                                    `thread: ${delThreadID}, replyid: ${replyid}`
+                                );
+
+                                done();
+                            });
                     });
             });
         });

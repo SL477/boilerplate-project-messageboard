@@ -56,41 +56,46 @@ export default function (app) {
                 .sort({ created_on: -1 })
                 .limit(10)
                 .then(async (docs) => {
-                    const resArray = await Promise.all(
-                        docs.map(async (ele) => {
-                            const ret = {
-                                board: ele.board,
-                                text: ele.threadText,
-                                _id: ele._id,
-                                created_on: ele._id.getTimestamp(),
-                                bumped_on: ele._id.getTimestamp(),
-                                replycount: 0,
-                                replies: [],
-                            };
-
-                            // get the three most recent replies
-                            await replyRecord
-                                .find({
-                                    board: req.params.board,
-                                    thread: ele._id,
-                                })
-                                .sort({ created_on: -1 })
-                                .limit(3)
-                                .then((reps) => {
-                                    ret.replies = reps.map((r) => {
-                                        return {
-                                            board: r.board,
-                                            _id: r._id,
-                                            created_on: r._id.getTimestamp(),
-                                            text: r.threadText,
-                                        };
-                                    });
-                                    ret.replycount = reps.length;
-                                })
-                                .catch((err) => console.error(err));
-                            return ret;
+                    const resArray = docs.map((ele) => {
+                        return {
+                            board: ele.board,
+                            text: ele.threadText,
+                            _id: ele._id,
+                            created_on: ele._id.getTimestamp(),
+                            bumped_on: ele._id.getTimestamp(),
+                            replycount: 0,
+                            replies: [],
+                        };
+                    });
+                    await replyRecord
+                        .find({
+                            board: req.params.board,
                         })
-                    );
+                        .sort({ created_on: -1 })
+                        .then((reps) => {
+                            reps.forEach((r) => {
+                                const reply = {
+                                    board: r.board,
+                                    _id: r._id,
+                                    created_on: r._id.getTimestamp(),
+                                    text: r.threadText,
+                                };
+                                const threadIdx = resArray.findIndex(
+                                    (t) => t._id == r.thread
+                                );
+
+                                if (
+                                    threadIdx > -1 &&
+                                    resArray[threadIdx].replycount < 3
+                                ) {
+                                    resArray[threadIdx].replies.push(reply);
+                                    resArray[threadIdx].replycount++;
+                                } else if (threadIdx > -1) {
+                                    resArray[threadIdx].replycount++;
+                                }
+                            });
+                        })
+                        .catch((err) => console.error(err));
                     res.send(resArray);
                 })
                 .catch((err) => {
@@ -99,7 +104,7 @@ export default function (app) {
                 });
         })
         .delete(function (req, res) {
-            console.log(req.body);
+            // console.log(req.body);
             threadRecord
                 .findOneAndDelete({
                     _id: req.body.thread_id,
@@ -137,7 +142,13 @@ export default function (app) {
 
     app.route('/api/replies/:board')
         .post(function (req, res) {
-            console.log(req.body.thread_id);
+            console.log(
+                '/api/replies/:board post',
+                req.body.thread_id,
+                req.params.board,
+                req.body.text,
+                req.body.delete_password
+            );
             replyRecord
                 .create({
                     board: req.params.board,
@@ -146,11 +157,19 @@ export default function (app) {
                     delete_password: req.body.delete_password,
                     reported: false,
                 })
-                .then(() =>
-                    res.redirect(
-                        '/b/' + req.params.board + '/' + req.body.thread_id
-                    )
-                )
+                .then((d) => {
+                    // console.log('/api/replies/:board post', d);
+                    // res.redirect(
+                    //     '/b/' + req.params.board + '/' + req.body.thread_id
+                    // );
+                    res.send({
+                        board: d.board,
+                        _id: d._id,
+                        created_on: d._id.getTimestamp(),
+                        text: d.threadText,
+                        thread: d.thread,
+                    });
+                })
                 .catch((err) => {
                     console.log(err);
                     res.send(err);
@@ -163,52 +182,56 @@ export default function (app) {
 
             const finder = { board: req.params.board };
 
-            if (req.params.thread_id) {
-                finder['_id'] = req.params.thread_id;
+            if (req.query.thread_id) {
+                finder['_id'] = req.query.thread_id;
             }
+            // console.log('/api/replies/:board', finder);
 
             threadRecord
                 .find(finder)
                 .then(async (docs) => {
-                    const resArray = await Promise.all(
-                        docs.map(async (ele) => {
-                            const ret = {
-                                board: ele.board,
-                                text: ele.threadText,
-                                _id: ele._id,
-                                created_on: ele._id.getTimestamp(),
-                                bumped_on: ele._id.getTimestamp(),
-                                replycount: 0,
-                                replies: [],
-                            };
+                    const resArray = docs.map((ele) => {
+                        return {
+                            board: ele.board,
+                            text: ele.threadText,
+                            _id: ele._id,
+                            created_on: ele._id.getTimestamp(),
+                            bumped_on: ele._id.getTimestamp(),
+                            replycount: 0,
+                            replies: [],
+                        };
+                    });
+                    await replyRecord
+                        .find({ board: req.params.board })
+                        .sort({ created_on: -1 })
+                        .then((reps) => {
+                            reps.forEach((r) => {
+                                const reply = {
+                                    board: r.board,
+                                    _id: r._id,
+                                    created_on: r._id.getTimestamp(),
+                                    text: r.threadText,
+                                };
 
-                            // get the three most recent replies
-                            await replyRecord
-                                .find({ board: ele.board, thread: ele._id })
-                                .sort({ created_on: -1 })
-                                .limit(3)
-                                .then((reps) => {
-                                    ret.replies = reps.map((r) => {
-                                        return {
-                                            board: r.board,
-                                            _id: r._id,
-                                            created_on: r._id.getTimestamp(),
-                                            text: r.threadText,
-                                        };
-                                    });
-                                    ret.replycount = reps.length;
-                                })
-                                .catch((err) => console.error(err));
-
-                            return ret;
-                        })
-                    );
-
-                    res.send(resArray);
+                                const threadIdx = resArray.findIndex(
+                                    (t) => t._id == r.thread
+                                );
+                                if (threadIdx > -1) {
+                                    resArray[threadIdx].replies.push(reply);
+                                    resArray[threadIdx].replycount++;
+                                }
+                            });
+                        });
+                    if (resArray.length >= 0) {
+                        res.send(resArray[0]);
+                    } else {
+                        res.send({});
+                    }
+                    // res.send(resArray);
                 })
                 .catch((err) => {
                     console.log(err);
-                    res.send([]);
+                    res.send({ replies: [] });
                 });
         })
         .delete(function (req, res) {
@@ -226,6 +249,13 @@ export default function (app) {
                     }
                 )
                 .then((doc) => {
+                    // console.log(
+                    //     'delete reply',
+                    //     doc,
+                    //     req.body.thread_id,
+                    //     req.body.delete_password,
+                    //     req
+                    // );
                     if (!doc) {
                         res.send('incorrect password');
                     } else {

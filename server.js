@@ -16,6 +16,8 @@ import {
     ieNoOpen,
     dnsPrefetchControl,
 } from 'helmet';
+import { swaggerSpec } from './swagger.js';
+import swaggerUi from 'swagger-ui-express';
 config();
 
 const app = express();
@@ -34,6 +36,9 @@ app.use(xssFilter());
 app.use(noSniff());
 app.use(ieNoOpen());
 app.use(dnsPrefetchControl());
+
+// Swagger
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 //Sample front-end
 app.route('/b/:board/').get(function (req, res) {

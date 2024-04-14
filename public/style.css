@@ -1,36 +1,57 @@
 * {
-  margin: 0px;
-  padding: 0px;
+    margin: 0px;
+    padding: 0px;
 }
 
 body {
-  padding: 10px;
+    padding: 10px;
 }
 
 .replies {
-  margin-left: 50px;
+    margin-left: 50px;
 }
 
 .reply {
-  border: 1px dotted black;
-  margin: 5px;
-  padding: 5px;
+    border: 1px dotted black;
+    margin: 5px;
+    padding: 5px;
 }
 
 .newReply {
-  margin: 10px 5px 10px 5px;
+    margin: 10px 5px 10px 5px;
 }
 
 .thread {
-  border: 2px solid black;
-  padding: 5px;
-  margin-bottom: 5px;
+    border: 2px solid black;
+    padding: 5px;
+    margin-bottom: 5px;
 }
 
 .id {
-  font-size: 10.5px;
+    font-size: 10.5px;
 }
 
 #submitNewThread {
-  margin: 50px;
+    margin: 50px;
+}
+
+#userstories {
+    margin-left: 5%;
+    margin-top: 5%;
+}
+
+hr {
+    margin: 50px;
+}
+
+hr:last-of-type {
+    margin-top: 200px;
+}
+
+#testui {
+    margin-left: 5%;
+}
+
+h2 {
+    text-align: left;
 }
